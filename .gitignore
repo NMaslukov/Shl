@@ -9,12 +9,7 @@ spring-boot-web-jsp.iml
 .springBeans
 .DS_Store
 
-hibernate*
 
 *.class
 *.iml
 
-src/main/resources/static/html/output.html
-
-application-test.properties
-application.properties
