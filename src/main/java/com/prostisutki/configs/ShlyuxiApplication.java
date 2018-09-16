@@ -1,13 +1,17 @@
 package com.prostisutki.configs;
 
+import com.prostisutki.resources.annotations.Table;
 import com.zaxxer.hikari.HikariDataSource;
+import org.reflections.Reflections;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
+import java.util.Set;
 
 @SpringBootApplication(scanBasePackages = "com.prostisutki")
 public class ShlyuxiApplication extends SpringBootServletInitializer {
@@ -31,4 +35,11 @@ public class ShlyuxiApplication extends SpringBootServletInitializer {
         return hikariDataSource;
     }
 
+    @PostConstruct
+    public void t(){
+        Reflections reflections = new Reflections("com.prostisutki.entity");
+        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(Table.class);
+        typesAnnotatedWith.forEach(e -> System.out.println(e.getClass()));
+        System.out.println(typesAnnotatedWith);
+    }
 }
