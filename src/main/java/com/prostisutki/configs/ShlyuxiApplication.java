@@ -2,6 +2,7 @@ package com.prostisutki.configs;
 
 import com.prostisutki.resources.annotations.Table;
 import com.zaxxer.hikari.HikariDataSource;
+import generator.DDLgenerator;
 import org.reflections.Reflections;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,10 +37,9 @@ public class ShlyuxiApplication extends SpringBootServletInitializer {
     }
 
     @PostConstruct
-    public void t(){
+    public void setUp(){
         Reflections reflections = new Reflections("com.prostisutki.entity");
         Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(Table.class);
-        typesAnnotatedWith.forEach(e -> System.out.println(e.getClass()));
-        System.out.println(typesAnnotatedWith);
+        DDLgenerator.process(typesAnnotatedWith);
     }
 }
