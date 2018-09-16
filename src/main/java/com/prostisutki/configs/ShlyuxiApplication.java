@@ -1,20 +1,13 @@
 package com.prostisutki.configs;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.wallet.Wallet;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import javax.xml.crypto.Data;
-import java.io.File;
 
 @SpringBootApplication(scanBasePackages = "com.prostisutki")
 public class ShlyuxiApplication extends SpringBootServletInitializer {

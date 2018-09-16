@@ -4,7 +4,6 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.client.BtcdClient;
 import com.neemre.btcdcli4j.core.client.BtcdClientImpl;
-import com.neemre.btcdcli4j.core.domain.Account;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -13,7 +12,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class BitcoinService {
@@ -53,14 +52,15 @@ public class BitcoinService {
 //        System.out.println(btcdClient.getBalance(addrWithBablo));
 //        System.out.println(btcdClient.getUnconfirmedBalance());
 //        System.out.println(btcdClient.listAccounts());
-        System.out.println(btcdClient.getBalance());
-        System.out.println(btcdClient.getBalance(addrWithBablo));
+//        System.out.println(btcdClient.getBalance());
+//        System.out.println(btcdClient.getBalance(addrWithBablo));
 //        btcdClient.setAccount(addrWithBablo,"bablo");
         String newAddress = btcdClient.getNewAddress();
-        btcdClient.setAccount(newAddress,"test");
-        List<Account> accounts = btcdClient.listReceivedByAccount();
+//        btcdClient.setAccount(newAddress,"test");
+        btcdClient.setAccount(addrWithBablo, "bablo");
+        Map<String, BigDecimal> accounts = btcdClient.listAccounts();
 
-        System.out.println(2);
+        System.out.println(accounts);
     }
 
 
