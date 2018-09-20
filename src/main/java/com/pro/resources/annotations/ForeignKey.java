@@ -1,6 +1,4 @@
-package com.prostisutki.resources.annotations;
-
-import java.lang.reflect.Field;
+package com.pro.resources.annotations;
 
 public @interface ForeignKey {
     Class targetEntity();

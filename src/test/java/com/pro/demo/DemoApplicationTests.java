@@ -1,4 +1,4 @@
-package com.prostisutki.demo;
+package com.pro.demo;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

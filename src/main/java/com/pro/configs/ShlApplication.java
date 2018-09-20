@@ -1,6 +1,6 @@
-package com.prostisutki.configs;
+package com.pro.configs;
 
-import com.prostisutki.resources.annotations.Table;
+import com.pro.resources.annotations.Table;
 import com.zaxxer.hikari.HikariDataSource;
 import generator.DDLgenerator;
 import org.reflections.Reflections;
@@ -14,16 +14,16 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.util.Set;
 
-@SpringBootApplication(scanBasePackages = "com.prostisutki")
-public class ShlyuxiApplication extends SpringBootServletInitializer {
+@SpringBootApplication(scanBasePackages = "com.pro")
+public class ShlApplication extends SpringBootServletInitializer {
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(ShlyuxiApplication.class);
+        return application.sources(ShlApplication.class);
     }
 
     public static void main(String[] args) throws Exception {
-        SpringApplication.run(ShlyuxiApplication.class, args);
+        SpringApplication.run(ShlApplication.class, args);
     }
 
     @Bean
@@ -38,7 +38,7 @@ public class ShlyuxiApplication extends SpringBootServletInitializer {
 
     @PostConstruct
     public void setUp(){
-        Reflections reflections = new Reflections("com.prostisutki.entity");
+        Reflections reflections = new Reflections("com.pro.entity");
         Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(Table.class);
         DDLgenerator.process(typesAnnotatedWith);
     }

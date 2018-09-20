@@ -1,8 +1,8 @@
 package generator;
 
-import com.prostisutki.resources.annotations.Column;
-import com.prostisutki.resources.annotations.Table;
-import com.prostisutki.resources.annotations.Type;
+import com.pro.resources.annotations.Column;
+import com.pro.resources.annotations.Table;
+import com.pro.resources.annotations.Type;
 
 import java.lang.reflect.Field;
 import java.util.Set;

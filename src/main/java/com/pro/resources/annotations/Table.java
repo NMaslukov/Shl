@@ -1,4 +1,4 @@
-package com.prostisutki.resources.annotations;
+package com.pro.resources.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

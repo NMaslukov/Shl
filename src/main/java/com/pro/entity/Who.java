@@ -1,7 +1,7 @@
-package com.prostisutki.entity;
+package com.pro.entity;
 
-import com.prostisutki.resources.annotations.*;
-import com.prostisutki.resources.annotations.enums.DataTypes;
+import com.pro.resources.annotations.*;
+import com.pro.resources.annotations.enums.DataTypes;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "whores")
-public class Whore {
+public class Who {
 
     @Id
     @Column(name = "id", type = @Type(dataType = DataTypes.INT), unique = false, primaryKey = true, autoIncrement = true,

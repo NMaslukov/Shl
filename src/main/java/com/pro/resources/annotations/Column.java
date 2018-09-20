@@ -1,6 +1,4 @@
-package com.prostisutki.resources.annotations;
-
-import com.prostisutki.resources.annotations.enums.DataTypes;
+package com.pro.resources.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

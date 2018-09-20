@@ -1,4 +1,4 @@
-package com.prostisutki.services.interfaces;
+package com.pro.services.interfaces;
 
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
