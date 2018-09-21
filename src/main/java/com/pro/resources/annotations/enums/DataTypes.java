@@ -1,7 +1,7 @@
 package com.pro.resources.annotations.enums;
 
 public enum DataTypes {
-    VARCHAR, SHORT("short"), INT("int"), BYTE("byte"), BIG_DECIMAL;
+    VARCHAR, SHORT("short"), INT("int"), BYTE("byte"), BIG_DECIMAL("BIGDECIMAL"), TINY("TINYINT");
 
     String stringVal;
 
