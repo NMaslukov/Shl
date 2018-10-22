@@ -2,9 +2,11 @@ package com.pro.jdbc;
 
 import com.pro.resources.annotations.Column;
 import com.pro.resources.annotations.Table;
+import lombok.SneakyThrows;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
@@ -17,13 +19,14 @@ public abstract class AbstractRepository<T> {
 
     protected final JdbcTemplate jdbcTemplate;
 
-    private final Class entity;
+    private final Class<com.pro.entity.Who> entity;
     private final String tableName;
 
-    public AbstractRepository(DataSource dataSource, Class entity){
+    public AbstractRepository(DataSource dataSource, Class<com.pro.entity.Who> entity){
+        System.out.println("init abstact");
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.entity = entity;
-        tableName = ((Table)entity.getAnnotation(Table.class)).name();
+        tableName = (entity.getAnnotation(Table.class)).name();
     }
 
     public void save(T enity) {
@@ -58,7 +61,8 @@ public abstract class AbstractRepository<T> {
     /*
     ** This method will properly works only for entities without super class and primary types!
      */
-    public Optional<T> findByParameters(T entity) throws IllegalAccessException {
+    @SneakyThrows
+    public Optional<T> findByParameters(T entity) {
         if(entity.getClass().getSuperclass() != Object.class) throw new RuntimeException("Not Allowed for entity with superclass != Object");
 
         Map<String, Object> params = getEntityParamMap(entity);
@@ -70,7 +74,7 @@ public abstract class AbstractRepository<T> {
         query.replace(query.lastIndexOf("AND"), query.length(), "");
 
         try {
-            return (Optional<T>) Optional.of(jdbcTemplate.queryForObject(query.toString(), params.values().toArray(), new BeanPropertyRowMapper(this.entity)));
+            return (Optional<T>) Optional.of(jdbcTemplate.queryForObject(query.toString(), params.values().toArray(), new BeanPropertyRowMapper<com.pro.entity.Who>(this.entity)));
         } catch (EmptyResultDataAccessException e){
             return Optional.ofNullable(null);
         }
@@ -86,5 +90,19 @@ public abstract class AbstractRepository<T> {
         return params;
     }
 
-
+    public RowMapper rowMapper(Class aClass, String[] fields) {
+        return (resultSet, i) -> {
+            try {
+                Object o = aClass.newInstance();
+                for (String field : fields) {
+                    Field declaredField = o.getClass().getDeclaredField(field);
+                    declaredField.setAccessible(true);
+                    declaredField.set(field, resultSet.getObject(field, declaredField.getClass()));
+                }
+                return o;
+            } catch (Exception e){
+                e.printStackTrace();
+                return null;}
+        };
+    }
 }

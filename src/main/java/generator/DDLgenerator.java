@@ -24,19 +24,22 @@ public class DDLgenerator {
         final StringBuilder tableDDL = new StringBuilder("create table if not exists " + e.getAnnotation(Table.class).name() +" (\n");
         List<String> constraints = new LinkedList<>();
 
-        for (Field declaredField : e.getDeclaredFields()) {
+        for (int i = 0; i < e.getDeclaredFields().length; i++) {
+            Field declaredField = e.getDeclaredFields()[i];
             Column definition = declaredField.getAnnotation(Column.class);
-            tableDDL.append("'" + definition.name() + "'   " + typeToString(definition.type()[0]) + addOtherConstraints(definition) +",\n");
+            tableDDL.append("'").append(definition.name()).append("'   ").append(typeToString(definition.type()[0])).append(addOtherConstraints(definition))
+                    .append(definition.autoIncrement()? "   AUTO_INCREMENT" : "").append(",\n");
             generateKeyConstraint(definition, constraints);
+            if(i>1 && i == e.getDeclaredFields().length) tableDDL.replace(tableDDL.lastIndexOf(","), tableDDL.lastIndexOf(",") + 1, "");
         }
         appendKeyConstraints(constraints, tableDDL);
-        tableDDL.replace(tableDDL.lastIndexOf(","), tableDDL.lastIndexOf(",") + 1, "").append(");\n"); //todo replace only >1 fields
-        fullDDL.append(tableDDL.toString() + "\n");
+        tableDDL.append(");\n");
+        fullDDL.append(tableDDL.toString()).append("\n");
     }
 
     private static void appendKeyConstraints(List<String> constraints, StringBuilder tableDDL) {
         for (String constraint : constraints) {
-            tableDDL.append(constraint + ",\n");
+            tableDDL.append(constraint).append(",\n");
         }
     }
 
