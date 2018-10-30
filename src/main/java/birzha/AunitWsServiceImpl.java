@@ -1,5 +1,6 @@
 package birzha;
 
+import com.google.common.io.ByteStreams;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -7,7 +8,12 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import static org.apache.logging.log4j.message.MapMessage.MapFormat.JSON;
 
@@ -149,6 +155,28 @@ public class AunitWsServiceImpl {
 //            System.out.println(l);
 //        }
     }
-}
 
+    public static void parse(String trx){
+        JSONObject transaction = new JSONObject(trx);
+        JSONArray params = transaction.getJSONArray("params");
+        long last_irreversible_block_num = params.getJSONArray(1).getJSONArray(0).getJSONObject(0).getLong("last_irreversible_block_num");
+        System.out.println(last_irreversible_block_num);
+    }
+
+    public static void main(String[] args) {
+//        parse("{\"method\":\"notice\",\"params\":[0,[[{\"id\":\"2.1.0\",\"head_block_number\":2656113,\"head_block_id\":\"0028877166bb2d623ceb486f4a1fae04246222dc\",\"time\":\"2018-10-26T13:53:51\",\"current_witness\":\"1.6.1\",\"next_maintenance_time\":\"2018-10-27T00:00:00\",\"last_budget_time\":\"2018-10-26T12:00:00\",\"witness_budget\":7275600,\"accounts_registered_this_interval\":41,\"recently_missed_count\":0,\"current_aslot\":2656119,\"recent_slots_filled\":\"340282366920938463463374607431768211455\",\"dynamic_flags\":0,\"last_irreversible_block_num\":2656106}]]]}\n");
+
+//        String[] commands = new String[] {"/home/dudoser/bash", "-c", "mkdir /home/dudoser/zalupa"};
+//        Process proc = new ProcessBuilder(commands).start();
+//        int i = proc.waitFor();
+//        InputStream inputStream = proc.getInputStream();
+//        byte[] bytes = ByteStreams.toByteArray(inputStream);
+//        System.out.println(i + new String(bytes, StandardCharsets.UTF_8));
+        System.out.println(reduceAmount(20));
+    }
+
+    private static BigDecimal reduceAmount(int amount) {
+        return new BigDecimal(amount).multiply(new BigDecimal(Math.pow(10, -5))).setScale(5, RoundingMode.HALF_DOWN);
+    }
+}
 
