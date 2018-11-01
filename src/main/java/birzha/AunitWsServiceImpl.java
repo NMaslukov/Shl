@@ -1,5 +1,6 @@
 package birzha;
 
+import com.google.common.hash.Hashing;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import static org.apache.logging.log4j.message.MapMessage.MapFormat.JSON;
 
@@ -88,10 +90,7 @@ public class AunitWsServiceImpl {
         subscribe.put("params", new JSONArray().put(2).put("set_subscribe_callback").put(new JSONArray().put(0).put(true)));
 
 
-        JSONObject block = new JSONObject();
-        block.put("id", 10);
-        block.put("method", "call");
-        block.put("params", new JSONArray().put(2).put("get_block").put(new JSONArray().put(2370646)));
+
 //1 transaction example {"id":10,"jsonrpc":"2.0","result":{"previous":"001f3ce20118d7962c1cc8f91917431891c0f371","timestamp":"2018-10-05T10:21:54","witness":"1.6.7","transaction_merkle_root":"8b527136e1e39d2773871273c5fac5c19c752c6e","extensions":[],"witness_signature":"1f04d9c1780914727cffaa36ad002a6a8a7f9e4c7018c52d388d4417ab8efa455f3e75bbe8a3ed377344310d237b0653d740835c83f9f4e77ad1a35c00a109258a","transactions":[{"ref_block_num":15586,"ref_block_prefix":2530678785,"expiration":"2018-10-05T10:22:21","operations":[[5,{"fee":{"amount":0,"asset_id":"1.3.0"},"registrar":"1.2.26","referrer":"1.2.26","referrer_percent":0,"name":"a2206b681-8660-4d04-81ad-a7adc0905273","owner":{"weight_threshold":1,"account_auths":[],"key_auths":[["AUNIT7BqnZ1v98bBE1CQNJzSP1iYVyxkRh8atq8rG9uqUUadroxDQY3",1]],"address_auths":[]},"active":{"weight_threshold":1,"account_auths":[],"key_auths":[["AUNIT8hp82A9iRqyN5KMh4Cb2VrdS6vPcYYzibKz93EMAqEb1ihzyVm",1]],"address_auths":[]},"options":{"memo_key":"AUNIT8hp82A9iRqyN5KMh4Cb2VrdS6vPcYYzibKz93EMAqEb1ihzyVm","voting_account":"1.2.5","num_witness":0,"num_committee":0,"votes":[],"extensions":[]},"extensions":{}}]],"extensions":[],"signatures":["202d114a57a15dc6916d87a5cd9031effb827fe723398a7198211dd4cb6f5b703a69278519bcb9e776838d27d46db41c7d06e3c92bc45e957a43b599058b347e1c"],"operation_results":[[1,"1.2.22401"]]}]}}
 
 
@@ -126,28 +125,43 @@ public class AunitWsServiceImpl {
         System.out.println(get_object);
         endpoint.sendText(get_object.toString());
 
-        System.out.println(block.toString());
+        getBlock(2820317);
+        getBlock(2820324);
+
+    }
+
+    private void getBlock(int block_num) throws IOException {
+        JSONObject block = new JSONObject();
+        block.put("id", 10);
+        block.put("method", "call");
+        block.put("params", new JSONArray().put(2).put("get_block").put(new JSONArray().put(block_num)));
+
         endpoint.sendText(block.toString());
-
-        System.out.println(send_bablo);
-        endpoint.sendText(send_bablo.toString());
-
-        //a
     }
 
     @OnMessage
     public void onMessage(String msg) {
         System.out.println(msg);
-//        if(msg.contains("null")) return; //todo kostil
-//
-//
-//        JSONObject jsonObject = new JSONObject(msg);
-//        String method = jsonObject.getString("method");
-//        if(method != null && method.equals("notice") && jsonObject.getJSONArray("params").length() != 0){
-//            String hex = ((String)((JSONArray) jsonObject.getJSONArray("params").get(1)).get(0)).substring(0, 8);
-//            long l = Long.parseLong(hex, 16);
-//            System.out.println(l);
-//        }
+        if (msg.contains("notice")){}
+        else if (msg.contains("previous")) printHash(msg);
+    }
+
+    private void printHash(String msg){
+        JSONObject block = new JSONObject(msg);
+        if (block.getJSONObject("result").getJSONArray("transactions").length() == 0) return;
+        JSONArray transactions = block.getJSONObject("result").getJSONArray("transactions");
+        for (int i = 0; i < transactions.length(); i++) {
+            JSONObject transaction = transactions.getJSONObject(i).getJSONArray("operations").getJSONArray(0).getJSONObject(1);
+
+            if (transaction.getString("to").equals("1.2.27569")){
+                JSONObject memo = transaction.getJSONObject("memo");
+                String s = Hashing.sha256()
+                        .hashString(memo.toString(), StandardCharsets.UTF_8)
+                        .toString();
+                System.out.println("HASHIS " + s);
+            }
+
+        }
     }
 }
 
