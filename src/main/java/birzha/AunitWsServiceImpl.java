@@ -1,5 +1,6 @@
 package birzha;
 
+import com.google.common.io.ByteStreams;
 import com.google.common.hash.Hashing;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,7 +9,12 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 
 import static org.apache.logging.log4j.message.MapMessage.MapFormat.JSON;
