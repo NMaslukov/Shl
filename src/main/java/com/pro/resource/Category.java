@@ -1,4 +1,4 @@
-package com.pro.resources;
+package com.pro.resource;
 
 public enum Category {
     FIRST, SECOND

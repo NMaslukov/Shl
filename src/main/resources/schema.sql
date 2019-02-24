@@ -1,15 +1,18 @@
-create table if not exists who (
-'id'   int UNIQUE   AUTO_INCREMENT,
-'name'   VARCHAR(50),
-'category'   TINYINT,
-PRIMARY KEY (id),
-FOREIGN KEY (id) REFERENCES tester(example),
+DROP DATABASE IF EXISTS test;
+CREATE DATABASE test;
+use test;
+CREATE TABLE IF NOT EXISTS tester (
+id int  NOT NULL   AUTO_INCREMENT,
+dwadwa VARCHAR(50),
+dawwda TINYINT,
+PRIMARY KEY (id)
 );
 
-create table if not exists tester (
-'id'   int  not null   AUTO_INCREMENT,
-'dwadwa'   VARCHAR(50),
-'dawwda'   TINYINT,
+CREATE TABLE IF NOT EXISTS who (
+id int UNIQUE   AUTO_INCREMENT,
+name VARCHAR(50),
+category TINYINT,
 PRIMARY KEY (id),
+FOREIGN KEY (id) REFERENCES tester(id)
 );
 

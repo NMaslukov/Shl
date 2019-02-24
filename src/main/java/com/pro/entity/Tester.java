@@ -1,8 +1,8 @@
 package com.pro.entity;
 
-import com.pro.resources.Category;
-import com.pro.resources.annotations.*;
-import com.pro.resources.annotations.enums.DataTypes;
+import com.pro.resource.Category;
+import com.pro.resource.annotations.*;
+import com.pro.resource.annotations.enums.DataType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 public class Tester {
 
     @Id
-    @Column(name = "id", type = @Type(dataType = DataTypes.INT), unique = true, notNull = true, primaryKey = true, autoIncrement = true)
+    @Column(name = "id", type = @Type(dataType = DataType.INT), unique = true, notNull = true, primaryKey = true, autoIncrement = true)
     private Integer id;
 
-    @Column(name = "dwadwa", type = @Type(dataType = DataTypes.VARCHAR, lenght = 50))
+    @Column(name = "dwadwa", type = @Type(dataType = DataType.VARCHAR, lenght = 50))
     private String name;
 
-    @Column(name = "dawwda", type = @Type(dataType = DataTypes.TINY))
+    @Column(name = "dawwda", type = @Type(dataType = DataType.TINY))
     private Category category;
 
 }

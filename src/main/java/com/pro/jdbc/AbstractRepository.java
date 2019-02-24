@@ -1,7 +1,7 @@
 package com.pro.jdbc;
 
-import com.pro.resources.annotations.Column;
-import com.pro.resources.annotations.Table;
+import com.pro.resource.annotations.Column;
+import com.pro.resource.annotations.Table;
 import lombok.SneakyThrows;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;

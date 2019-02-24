@@ -1,8 +1,8 @@
 package com.pro.entity;
 
-import com.pro.resources.Category;
-import com.pro.resources.annotations.*;
-import com.pro.resources.annotations.enums.DataTypes;
+import com.pro.resource.Category;
+import com.pro.resource.annotations.*;
+import com.pro.resource.annotations.enums.DataType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,14 +14,14 @@ import lombok.NoArgsConstructor;
 public class Who {
 
     @Id
-    @Column(name = "id", type = @Type(dataType = DataTypes.INT), unique = true, primaryKey = true, autoIncrement = true,
-    foreignKey = @ForeignKey(targetEntity = Tester.class, filedName = "example"))
+    @Column(name = "id", type = @Type(dataType = DataType.INT), unique = true, primaryKey = true, autoIncrement = true,
+    foreignKey = @ForeignKey(targetEntity = Tester.class, filedName = "id"))
     private Integer id;
 
-    @Column(name = "name", type = @Type(dataType = DataTypes.VARCHAR, lenght = 50))
+    @Column(name = "name", type = @Type(dataType = DataType.VARCHAR, lenght = 50))
     private String name;
 
-    @Column(name = "category", type = @Type(dataType = DataTypes.TINY))
+    @Column(name = "category", type = @Type(dataType = DataType.TINY))
     private Category category;
 
 }

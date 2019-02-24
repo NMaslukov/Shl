@@ -3,7 +3,6 @@ package com.pro.utils;
 import java.io.FileWriter;
 import java.io.IOException;
 
-//@Logger
 public class Writer {
 
     public static void appendTo(String path, String text) {

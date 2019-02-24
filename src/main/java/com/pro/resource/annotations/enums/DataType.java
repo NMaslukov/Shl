@@ -1,15 +1,15 @@
-package com.pro.resources.annotations.enums;
+package com.pro.resource.annotations.enums;
 
-public enum DataTypes {
+public enum DataType {
     VARCHAR, SHORT("short"), INT("int"), BYTE("byte"), BIG_DECIMAL("BIGDECIMAL"), TINY("TINYINT");
 
     String stringVal;
 
-    DataTypes(String sV){
+    DataType(String sV){
         stringVal = sV;
     }
 
-    DataTypes(){
+    DataType(){
         stringVal = super.toString();
     }
 
