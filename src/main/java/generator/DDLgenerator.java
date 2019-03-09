@@ -1,10 +1,13 @@
 package generator;
 
+import com.pro.cruthnate.dto.ParsedEntity;
 import com.pro.resource.annotations.Column;
+import com.pro.resource.annotations.ForeignKey;
 import com.pro.resource.annotations.Table;
 import com.pro.resource.annotations.Type;
 import com.pro.utils.Writer;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class DDLgenerator {
@@ -17,36 +20,74 @@ public class DDLgenerator {
     private static final String DELIMITER = "\n";
     private static final String NOT_NULL = "NOT NULL";
     private static final String UNIQUE = "UNIQUE";
+    private static final String schema_name = "test";
+    private static final String DROP_DATABASE_IF_EXISTS = "DROP DATABASE IF EXISTS";
+    private static final String CREATE_DATABASE = "CREATE DATABASE";
+    private static final String USE = "use";
+    private static final StringBuilder resultDDl = new StringBuilder(DROP_DATABASE_IF_EXISTS + " " + schema_name + ";" + DELIMITER +
+            CREATE_DATABASE + " " + schema_name + ";" + DELIMITER +
+            USE + " " + schema_name + ";" + DELIMITER + "\n");
+    private static final List<String> createdEntities = new LinkedList<>();
+    private static final String pathToSaveSQL = "src/main/resources/schema.sql";
+
 
     public static void process(Set<Class<?>> entities){
-        final StringBuilder fullDDL = new StringBuilder("DROP DATABASE IF EXISTS test;\n" +
-                "CREATE DATABASE test;\n" +
-                "use test;\n\n");
-        Map<String, String> entityDDlMap = new LinkedHashMap<>();
+        Map<String, ParsedEntity> parsedEntityMap = new LinkedHashMap<>();
         entities.forEach(e-> {
-            appendEntityDDL(e, entityDDlMap);
+            fillParsedEntityMap(e, parsedEntityMap);
         });
-        concatByOrder(entityDDlMap, fullDDL); //TODO add depends on into map for ordering concationation
-        Writer.overwriteTo("src/main/resources/schema.sql" ,fullDDL.toString());
+
+        concatByOrder(parsedEntityMap);
+        Writer.overwriteTo(pathToSaveSQL, resultDDl.toString());
     }
 
-    private static void concatByOrder(Map<String, String> entityDDlMap, StringBuilder fullDDL) {
-
+    private static void concatByOrder(Map<String, ParsedEntity> entityDDlMap) {
+        while (entityDDlMap.size() > 0){
+            orderingAppending(entityDDlMap, entityDDlMap.entrySet().stream().findFirst().get());
+        }
     }
 
-    private static void appendEntityDDL(Class<?> entity, Map<String, String> entityDDlMap){
+    private static void orderingAppending(Map<String, ParsedEntity> entityDDlMap, Map.Entry<String, ParsedEntity> entry) {
+        List<String> dependsOn = entry.getValue().getDependsOn();
+        dependsOn.removeAll(createdEntities);
+        if(dependsOn.size() == 0){
+            resultDDl.append(entry.getValue().getDdl());
+            entityDDlMap.remove(entry.getKey());
+            createdEntities.add(entry.getKey());
+            return;
+        }
+        for (String dependency : dependsOn) {
+            orderingAppending(entityDDlMap, entityDDlMap.entrySet().stream().filter(e -> e.getKey().equals(dependency)).findFirst().get());
+        }
+    }
+
+    private static void fillParsedEntityMap(Class<?> entity, Map<String, ParsedEntity> entityDDlMap){
         String header = CREATE_TABLE_IF_NOT_EXISTS + entity.getAnnotation(Table.class).name() + " (" + DELIMITER;
         final StringBuilder tableDDL = new StringBuilder(header);
         List<String> constraints = new LinkedList<>();
 
         for (int i = 0; i < entity.getDeclaredFields().length; i++) {
             Column columnDefinition = entity.getDeclaredFields()[i].getAnnotation(Column.class);
+            if(columnDefinition == null) throw new RuntimeException("Column annotation can not be null!");
+
             appendFieldDDL(entity, columnDefinition, tableDDL);
             storeKeyConstraint(columnDefinition, constraints);
         }
         appendKeyConstraints(constraints, tableDDL);
         normilize(tableDDL);
-        entityDDlMap.put(entity.getName(), tableDDL.toString());
+
+        ParsedEntity parsedEntity = new ParsedEntity();
+        parsedEntity.setDdl(tableDDL.toString());
+        fillDependsOn(entity, parsedEntity);
+        entityDDlMap.put(entity.getAnnotation(Table.class).name(), parsedEntity);
+    }
+
+    private static void fillDependsOn(Class<?> entity, ParsedEntity parsedEntity) {
+        for (Field declaredField : entity.getDeclaredFields()) {
+            for (ForeignKey foreignKey : declaredField.getAnnotation(Column.class).foreignKey()) {
+                parsedEntity.getDependsOn().add(((Table)foreignKey.targetEntity().getAnnotation(Table.class)).name());
+            }
+        }
     }
 
     private static void normilize(StringBuilder tableDDL) {

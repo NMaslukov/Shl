@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.OnMessage;
 
-@ClientEndpoint
-@Service
+//@ClientEndpoint
+//@Service
 public class AunitImpls extends AunitWsServiceImpl {
 
 

@@ -17,31 +17,30 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractRepository<T> {
 
+    private static final String INSERT_INTO = "INSERT INTO ";
+    private static final String VALUES = " VALUES";
     protected final JdbcTemplate jdbcTemplate;
 
-    private final Class<com.pro.entity.Who> entity;
     private final String tableName;
 
-    public AbstractRepository(DataSource dataSource, Class<com.pro.entity.Who> entity){
-        System.out.println("init abstact");
+    public AbstractRepository(DataSource dataSource, Class entity){
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.entity = entity;
-        tableName = (entity.getAnnotation(Table.class)).name();
+        tableName = ((Table)(entity.getAnnotation(Table.class))).name();
     }
 
-    public void save(T enity) {
+    public void save(T entity) {
 
         Map<String, Object> entityParamMap = null;
         try {
-            entityParamMap = getEntityParamMap(enity);
+            entityParamMap = getEntityParamMap(entity);
         } catch (IllegalAccessException e) {
-            e.printStackTrace(); //todo
+            throw new RuntimeException(e);
         }
 
-        String names = "(" + entityParamMap.entrySet().stream().map(e -> e.getKey()).collect(Collectors.joining(",")) + ") ";
-        String values = "(" + entityParamMap.entrySet().stream().map(e-> getStringValue(e)).collect(Collectors.joining(",")) + ")";
+        String names = "(" + String.join(",", entityParamMap.keySet()) + ") ";
+        String values = "(" + entityParamMap.entrySet().stream().map(this::getStringValue).collect(Collectors.joining(",")) + ")";
 
-        jdbcTemplate.execute("INSERT INTO " + tableName + names + "VALUES" + values);
+        jdbcTemplate.execute(INSERT_INTO + tableName + names + VALUES + values);
     }
 
     private String getStringValue(Map.Entry<String, Object> e) {
@@ -69,14 +68,14 @@ public abstract class AbstractRepository<T> {
 
         StringBuilder query = new StringBuilder("SELECT * FROM " + tableName + " WHERE ");
         for (Map.Entry<String, Object> e: params.entrySet()) {
-            query.append(e.getKey() + "=? AND ");
+            query.append(e.getKey()).append("=?").append(" AND ");
         }
         query.replace(query.lastIndexOf("AND"), query.length(), "");
 
         try {
-            return (Optional<T>) Optional.of(jdbcTemplate.queryForObject(query.toString(), params.values().toArray(), new BeanPropertyRowMapper<com.pro.entity.Who>(this.entity)));
+            return (Optional<T>) Optional.of(jdbcTemplate.queryForObject(query.toString(), params.values().toArray(), new BeanPropertyRowMapper(entity.getClass())));
         } catch (EmptyResultDataAccessException e){
-            return Optional.ofNullable(null);
+            return Optional.empty();
         }
     }
 
@@ -90,15 +89,15 @@ public abstract class AbstractRepository<T> {
         return params;
     }
 
-    public RowMapper rowMapper(Class aClass, String[] fields) {
+    public RowMapper rowMapper(Class aClass) { //TODO test
         return (resultSet, i) -> {
             try {
                 Object o = aClass.newInstance();
-                for (String field : fields) {
-                    Field declaredField = o.getClass().getDeclaredField(field);
-                    declaredField.setAccessible(true);
-                    declaredField.set(field, resultSet.getObject(field, declaredField.getClass()));
+                for (Field declaredField : o.getClass().getDeclaredFields()) {
+                    Object value = resultSet.getObject(declaredField.getAnnotation(Column.class).name());
+                    declaredField.set(o, value);
                 }
+
                 return o;
             } catch (Exception e){
                 e.printStackTrace();

@@ -3,12 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.prostisutki</groupId>
-    <artifactId>Shala</artifactId>
+    <groupId>com.crutchnate</groupId>
+    <artifactId>Crutchnate</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Shl</name>
+    <name>Crutchnate</name>
     <description>Just vi vs</description>
 
     <parent>
@@ -129,6 +129,17 @@
             <version>2.9.6</version>
 
         </dependency>
+        <dependency>
+            <groupId>com.neemre.btcd-cli4j</groupId>
+            <artifactId>btcd-cli4j-core</artifactId>
+            <version>0.5.9.17</version>
+        </dependency>
+        <dependency>
+        <groupId>com.neemre.btcd-cli4j</groupId>
+        <artifactId>btcd-cli4j-daemon</artifactId>
+        <version>0.5.9.17</version>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
