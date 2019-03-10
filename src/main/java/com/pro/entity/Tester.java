@@ -23,4 +23,8 @@ public class Tester {
     @Column(name = "dawwda", type = @Type(dataType = DataType.TINY))
     private Category category;
 
+    @Column(name = "zalupa", type = @Type(dataType = DataType.TINY))
+    private Category zalupa;
+
+
 }

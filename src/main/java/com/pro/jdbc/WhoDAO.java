@@ -19,7 +19,6 @@ public class WhoDAO extends AbstractRepository<Who> {
 
     public WhoDAO(DataSource dataSource) {
         super(dataSource, Who.class);
-        System.out.println("create Whodao " + this.toString());
     }
 
 //    public Optional<Who> findById(int id) throws IllegalAccessException {

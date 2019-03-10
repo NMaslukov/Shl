@@ -24,4 +24,7 @@ public class Who {
     @Column(name = "category", type = @Type(dataType = DataType.TINY))
     private Category category;
 
+    @Column(name = "lalal", type = @Type(dataType = DataType.TINY), notNull = true)
+    private String va;
+
 }

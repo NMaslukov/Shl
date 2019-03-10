@@ -1,4 +1,4 @@
-package generator;
+package com.pro.utils.generator;
 
 import com.pro.cruthnate.dto.ParsedEntity;
 import com.pro.resource.annotations.Column;
@@ -24,14 +24,12 @@ public class DDLgenerator {
     private static final String DROP_DATABASE_IF_EXISTS = "DROP DATABASE IF EXISTS";
     private static final String CREATE_DATABASE = "CREATE DATABASE";
     private static final String USE = "use";
-    private static final StringBuilder resultDDl = new StringBuilder(DROP_DATABASE_IF_EXISTS + " " + schema_name + ";" + DELIMITER +
-            CREATE_DATABASE + " " + schema_name + ";" + DELIMITER +
-            USE + " " + schema_name + ";" + DELIMITER + "\n");
+    private static final StringBuilder resultDDl = new StringBuilder();
     private static final List<String> createdEntities = new LinkedList<>();
     private static final String pathToSaveSQL = "src/main/resources/schema.sql";
 
 
-    public static void process(Set<Class<?>> entities){
+    public static String process(Set<Class<?>> entities){
         Map<String, ParsedEntity> parsedEntityMap = new LinkedHashMap<>();
         entities.forEach(e-> {
             fillParsedEntityMap(e, parsedEntityMap);
@@ -39,6 +37,7 @@ public class DDLgenerator {
 
         concatByOrder(parsedEntityMap);
         Writer.overwriteTo(pathToSaveSQL, resultDDl.toString());
+        return resultDDl.toString();
     }
 
     private static void concatByOrder(Map<String, ParsedEntity> entityDDlMap) {
@@ -70,11 +69,11 @@ public class DDLgenerator {
             Column columnDefinition = entity.getDeclaredFields()[i].getAnnotation(Column.class);
             if(columnDefinition == null) throw new RuntimeException("Column annotation can not be null!");
 
-            appendFieldDDL(entity, columnDefinition, tableDDL);
+            appendFieldDDL(columnDefinition, tableDDL);
             storeKeyConstraint(columnDefinition, constraints);
         }
         appendKeyConstraints(constraints, tableDDL);
-        normilize(tableDDL);
+        normalize(tableDDL);
 
         ParsedEntity parsedEntity = new ParsedEntity();
         parsedEntity.setDdl(tableDDL.toString());
@@ -90,12 +89,12 @@ public class DDLgenerator {
         }
     }
 
-    private static void normilize(StringBuilder tableDDL) {
+    private static void normalize(StringBuilder tableDDL) {
         tableDDL.append(");" + DELIMITER);
         tableDDL.replace(tableDDL.lastIndexOf(","), tableDDL.lastIndexOf(",") + 1, "");
     }
 
-    private static void appendFieldDDL(Class<?> e, Column columnDefinition, StringBuilder tableDDL) {
+    public static void appendFieldDDL(Column columnDefinition, StringBuilder tableDDL) {
         tableDDL.append(columnDefinition.name()).append(" ").append(typeToString(columnDefinition.type()[0])).append(addOtherConstraints(columnDefinition))
                 .append(columnDefinition.autoIncrement()? "   " + AUTO_INCREMENT : "").append("," + DELIMITER);
     }

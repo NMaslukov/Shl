@@ -1,11 +1,9 @@
 package com.pro;
 
 import com.pro.jdbc.WhoDAO;
-import com.pro.resource.annotations.Table;
+import com.pro.services.CrutchNate;
 import com.zaxxer.hikari.HikariDataSource;
-import generator.DDLgenerator;
-import org.reflections.Reflections;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -16,13 +14,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import javax.websocket.ClientEndpoint;
-import java.util.Set;
 
 @SpringBootApplication(scanBasePackages = {"com.pro"})
 @EnableScheduling
 public class ShlApplication extends SpringBootServletInitializer {
 
+    @Autowired
+    private DataSource dataSource;
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
@@ -47,9 +45,8 @@ public class ShlApplication extends SpringBootServletInitializer {
 
     @PostConstruct
     public void setUp(){
-        Reflections reflections = new Reflections("com.pro.entity");
-        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(Table.class);
-        DDLgenerator.process(typesAnnotatedWith);
+        String basePackage = "com.pro.entity";
+        CrutchNate.run(basePackage, dataSource);
     }
 
 }
