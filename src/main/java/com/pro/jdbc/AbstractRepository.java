@@ -3,29 +3,31 @@ package com.pro.jdbc;
 import com.pro.resource.annotations.Column;
 import com.pro.resource.annotations.Table;
 import lombok.SneakyThrows;
+import org.apache.commons.lang.enums.EnumUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class AbstractRepository<T> {
 
     private static final String INSERT_INTO = "INSERT INTO ";
     private static final String VALUES = " VALUES";
-    protected final JdbcTemplate jdbcTemplate;
+    protected final NamedParameterJdbcTemplate jdbcTemplate;
 
     private final String tableName;
+    private final Class entityClass;
 
-    public AbstractRepository(DataSource dataSource, Class entity){
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        tableName = ((Table)(entity.getAnnotation(Table.class))).name();
+    public AbstractRepository(DataSource dataSource, Class entityClass){
+        this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+        tableName = ((Table)(entityClass.getAnnotation(Table.class))).name();
+        this.entityClass = entityClass;
     }
 
     public void save(T entity) {
@@ -40,18 +42,14 @@ public abstract class AbstractRepository<T> {
         String names = "(" + String.join(",", entityParamMap.keySet()) + ") ";
         String values = "(" + entityParamMap.entrySet().stream().map(this::getStringValue).collect(Collectors.joining(",")) + ")";
 
-        jdbcTemplate.execute(INSERT_INTO + tableName + names + VALUES + values);
+        jdbcTemplate.update(INSERT_INTO + tableName + names + VALUES + values, Collections.emptyMap());
     }
 
     private String getStringValue(Map.Entry<String, Object> e) {
         Object value = e.getValue();
 
-        if(value instanceof String){
+        if(value instanceof String || value instanceof Enum){
             return "'" + value + "'";
-        }
-
-        if(value instanceof Enum) {
-            return String.valueOf(((Enum)value).ordinal());
         }
 
         return value.toString();
@@ -62,8 +60,6 @@ public abstract class AbstractRepository<T> {
      */
     @SneakyThrows
     public Optional<T> findByParameters(T entity) {
-        if(entity.getClass().getSuperclass() != Object.class) throw new RuntimeException("Not Allowed for entity with superclass != Object");
-
         Map<String, Object> params = getEntityParamMap(entity);
 
         StringBuilder query = new StringBuilder("SELECT * FROM " + tableName + " WHERE ");
@@ -73,10 +69,23 @@ public abstract class AbstractRepository<T> {
         query.replace(query.lastIndexOf("AND"), query.length(), "");
 
         try {
-            return (Optional<T>) Optional.of(jdbcTemplate.queryForObject(query.toString(), params.values().toArray(), new BeanPropertyRowMapper(entity.getClass())));
+            return (Optional<T>) Optional.ofNullable(jdbcTemplate.queryForObject(query.toString(), params, new BeanPropertyRowMapper(entity.getClass())));
         } catch (EmptyResultDataAccessException e){
             return Optional.empty();
         }
+    }
+
+    @SneakyThrows
+    public int updateByParameters(T entity){
+        Map<String, Object> params = getEntityParamMap(entity);
+        StringBuilder query = new StringBuilder("UPDATE " + entity.getClass().getAnnotation(Table.class).name() + " SET ");
+
+        for (Map.Entry<String, Object> paramsEntry : params.entrySet()) {
+            query.append(paramsEntry.getKey() + " = :" + paramsEntry + ", ");
+        }
+        query.replace(query.lastIndexOf(","), query.length(), "");
+
+        return jdbcTemplate.update(query.toString(), params);
     }
 
     private Map<String, Object> getEntityParamMap(T entity) throws IllegalAccessException {
@@ -89,19 +98,35 @@ public abstract class AbstractRepository<T> {
         return params;
     }
 
-    public RowMapper rowMapper(Class aClass) { //TODO test
+    public RowMapper<T> mapper() {
         return (resultSet, i) -> {
             try {
-                Object o = aClass.newInstance();
-                for (Field declaredField : o.getClass().getDeclaredFields()) {
+                T newInstance = (T) entityClass.newInstance();
+                for (Field declaredField : newInstance.getClass().getDeclaredFields()) {
                     Object value = resultSet.getObject(declaredField.getAnnotation(Column.class).name());
-                    declaredField.set(o, value);
+                    declaredField.setAccessible(true);
+                    if(((Class)declaredField.getGenericType()).isEnum()){
+                        setEnumValue(newInstance, declaredField, value);
+                        continue;
+                    }
+                    ;
+                    declaredField.set(newInstance, value);
                 }
-
-                return o;
+                return newInstance;
             } catch (Exception e){
                 e.printStackTrace();
-                return null;}
+                return null;
+            }
         };
+    }
+
+    private void setEnumValue(T newInstance, Field declaredField, Object value) throws ClassNotFoundException, IllegalAccessException {
+        Iterator<?> iterator = Arrays.stream(Class.forName(declaredField.getGenericType().getTypeName()).getEnumConstants()).iterator();
+        while (iterator.hasNext()){
+            Enum next = (Enum) iterator.next();
+            if(next.name().equals(String.valueOf(value))){
+                declaredField.set(newInstance, next);
+            }
+        }
     }
 }

@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS tester (
 id int  NOT NULL   AUTO_INCREMENT,
 dwadwa VARCHAR(50),
-dawwda TINYINT,
-zalupa TINYINT,
+dawwda VARCHAR(20),
+lala VARCHAR(20),
 PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS who (

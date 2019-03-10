@@ -5,12 +5,14 @@ import com.pro.resource.annotations.*;
 import com.pro.resource.annotations.enums.DataType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "tester")
+@EqualsAndHashCode
 public class Tester {
 
     @Id
@@ -20,11 +22,11 @@ public class Tester {
     @Column(name = "dwadwa", type = @Type(dataType = DataType.VARCHAR, lenght = 50))
     private String name;
 
-    @Column(name = "dawwda", type = @Type(dataType = DataType.TINY))
+    @Column(name = "dawwda", type = @Type(dataType = DataType.VARCHAR, lenght = 20))
     private Category category;
 
-    @Column(name = "zalupa", type = @Type(dataType = DataType.TINY))
-    private Category zalupa;
+    @Column(name = "lala", type = @Type(dataType = DataType.VARCHAR, lenght = 20))
+    private Category lala;
 
 
 }

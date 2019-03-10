@@ -3,12 +3,10 @@ package com.pro.utils.validator;
 import com.pro.resource.annotations.Column;
 import com.pro.resource.annotations.Table;
 import com.pro.utils.generator.DDLgenerator;
-import javafx.scene.control.Tab;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
-import org.reflections.ReflectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -19,33 +17,32 @@ import java.util.*;
 public class SchemaValidator {
 
     private static final String QUERY_FOR_COLUMNS = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = :table_name AND TABLE_SCHEMA = :table_schema" ;
-    private NamedParameterJdbcTemplate template;
     private final String table_schema;
     private Log log = LogFactory.getLog("crutchnate.log");
+    private NamedParameterJdbcTemplate template;
 
     public SchemaValidator(DataSource dataSource, String table_schema) {
         this.template = new NamedParameterJdbcTemplate(dataSource);
         this.table_schema = table_schema;
     }
 
-    public void validate(Set<Class<?>> entities, DataSource dataSource) {
+    public void validate(Set<Class<?>> entities) {
         Map<String, List<Column>> missingDbTableColumnsMap = new HashMap<>();
-
         try {
             Map<String, List<ColumnsDTO>> entitiesFromDB = getEntitiesFromDB(entities);
 
             for (Class<?> entity : entities) {
                 Table tableAnnotation = entity.getAnnotation(Table.class);
                 List<ColumnsDTO> columnsFromDb = entitiesFromDB.get(tableAnnotation.name());
-                for (Field declaredField : entity.getDeclaredFields()) {
-                    Column columnDef = declaredField.getAnnotation(Column.class);
+                for (Field field : entity.getDeclaredFields()) {
+                    Column columnDef = field.getAnnotation(Column.class);
                     Optional<ColumnsDTO> dbColumnDef = columnsFromDb.stream().filter(e -> e.getCOLUMN_NAME().equals(columnDef.name())).findFirst();
                     if(!dbColumnDef.isPresent()){
                         putMissingColumn(missingDbTableColumnsMap, tableAnnotation, columnDef);
                     }
                 }
             }
-            insertMissingColumns(missingDbTableColumnsMap);
+            addMissingColumns(missingDbTableColumnsMap);
             deleteColumns(entities, entitiesFromDB);
 
         } catch (Exception e){
@@ -53,32 +50,44 @@ public class SchemaValidator {
         }
     }
 
-    private void deleteColumns(Set<Class<?>> entities, Map<String, List<ColumnsDTO>> entitiesFromDB) throws NoSuchFieldException {
+    private void deleteColumns(Set<Class<?>> entities, Map<String, List<ColumnsDTO>> entitiesFromDB) {
         log.info("Deleting column: ");
         for (Map.Entry<String, List<ColumnsDTO>> dbEntitiesEntry : entitiesFromDB.entrySet()) {
             for (ColumnsDTO columnsDTO : dbEntitiesEntry.getValue()) {
                 Class<?> targetEntity = entities.stream().filter(e -> e.getAnnotation(Table.class).name().equals(columnsDTO.getTABLE_NAME())).findFirst().get();
-                if(Arrays.stream(targetEntity.getDeclaredFields()).noneMatch(e -> e.getAnnotation(Column.class).name().equals(columnsDTO.getCOLUMN_NAME()))){
-                    log.info(columnsDTO.getCOLUMN_NAME());
-                    String removeColumnSql = "ALTER TABLE " + targetEntity.getAnnotation(Table.class).name() + " DROP " + columnsDTO.getCOLUMN_NAME();
-                    template.update(removeColumnSql, new HashMap<>());
+                if(isColumnNotExist(columnsDTO, targetEntity)){
+                    deleteColumn(columnsDTO, targetEntity);
                 }
 
             }
         }
     }
 
-    private void insertMissingColumns(Map<String, List<Column>> missingDbTableColumnsMap) {
+    private void deleteColumn(ColumnsDTO columnsDTO, Class<?> targetEntity) {
+        log.info(columnsDTO.getCOLUMN_NAME());
+        String removeColumnSql = "ALTER TABLE " + targetEntity.getAnnotation(Table.class).name() + " DROP " + columnsDTO.getCOLUMN_NAME();
+        template.update(removeColumnSql, new HashMap<>());
+    }
+
+    private boolean isColumnNotExist(ColumnsDTO columnsDTO, Class<?> targetEntity) {
+        return Arrays.stream(targetEntity.getDeclaredFields()).noneMatch(e -> e.getAnnotation(Column.class).name().equals(columnsDTO.getCOLUMN_NAME()));
+    }
+
+    private void addMissingColumns(Map<String, List<Column>> missingDbTableColumnsMap) {
         log.info("Missing columns: \n");
         for (Map.Entry<String, List<Column>> missingColumns : missingDbTableColumnsMap.entrySet()) {
             for (Column missingColumn : missingColumns.getValue()) {
-                log.info(missingColumn.name());
-                StringBuilder builder = new StringBuilder();
-                DDLgenerator.appendFieldDDL(missingColumn, builder);
-                String sql = "ALTER TABLE " + missingColumns.getKey() + " ADD COLUMN " + builder.toString().replace(",", "");
-                template.update(sql, new HashMap<>());
+                addColumnToDbTable(missingColumns, missingColumn);
             }
         }
+    }
+
+    private void addColumnToDbTable(Map.Entry<String, List<Column>> missingColumns, Column missingColumn) {
+        log.info(missingColumn.name());
+        StringBuilder builder = new StringBuilder();
+        DDLgenerator.appendFieldDDL(missingColumn, builder);
+        String sql = "ALTER TABLE " + missingColumns.getKey() + " ADD COLUMN " + builder.toString().replace(",", "");
+        template.update(sql, new HashMap<>());
     }
 
     private void putMissingColumn(Map<String, List<Column>> missingTableColumnsMap, Table tableAnnotation, Column columnDef) {
