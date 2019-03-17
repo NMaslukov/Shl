@@ -3,6 +3,8 @@ package com.pro.services;
 import com.pro.resource.annotations.Table;
 import com.pro.utils.generator.DDLgenerator;
 import com.pro.utils.validator.SchemaValidator;
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.reflections.Reflections;
 import org.springframework.core.io.ClassPathResource;
@@ -12,12 +14,18 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
 @Log4j2
 public class CrutchNate {
 
+    public static final String SCHEMA_SQL = "schema.sql";
+
+    @SneakyThrows
     public static void run(String entityPackage, DataSource dataSource) {
         try {
             Set<Class<?>> entities = scanEntities(entityPackage);
@@ -25,9 +33,9 @@ public class CrutchNate {
             String[] split = resultDDl.split(";");
             split[split.length - 1] = null;
             new JdbcTemplate(dataSource).batchUpdate(split);
-//            executeScript(dataSource);
-
-            SchemaValidator validator = new SchemaValidator(dataSource, "test");
+            String jdbcUrl = ((HikariDataSource) dataSource).getJdbcUrl();
+            String schemaName = jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1);
+            SchemaValidator validator = new SchemaValidator(dataSource,  schemaName);
             validator.validate(entities);
         } catch (Exception e){
             e.printStackTrace();
@@ -35,7 +43,7 @@ public class CrutchNate {
     }
 
     private static void executeScript(DataSource dataSource) throws IOException, SQLException {
-        ClassPathResource resource = new ClassPathResource("schema.sql");
+        ClassPathResource resource = new ClassPathResource(SCHEMA_SQL);
         ScriptUtils.executeSqlScript(dataSource.getConnection(), resource);
     }
 

@@ -10,7 +10,6 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,16 +43,16 @@ public abstract class AbstractRepository<T> implements Repository<T> {
         }
 
         String names = "(" + String.join(",", entityParamMap.keySet()) + ") ";
-        String values = "(" + entityParamMap.entrySet().stream().map(this::getStringValue).collect(Collectors.joining(",")) + ")";
+        String values = "(" + entityParamMap.entrySet().stream().map(this::getStringQueryValue).collect(Collectors.joining(",")) + ")";
 
         jdbcTemplate.update(INSERT_INTO + tableName + names + VALUES + values, Collections.emptyMap());
     }
 
-    private String getStringValue(Map.Entry<String, Object> e) {
+    private String getStringQueryValue(Map.Entry<String, Object> e) {
         Object value = e.getValue();
 
         if(value instanceof String || value instanceof Enum){
-            return "'" + value + "'";
+            return "'" + value.toString() + "'";
         }
 
         return value.toString();
@@ -67,22 +66,34 @@ public abstract class AbstractRepository<T> implements Repository<T> {
     public List<T> findByParameters(T entity) {
         Map<String, Object> params = getEntityParamMap(entity);
         if(params.size() == 0) throw new RuntimeException("Params size 0");
+
         StringBuilder query = new StringBuilder("SELECT * FROM " + tableName + " WHERE ");
         for (Map.Entry<String, Object> e: params.entrySet()) {
             query.append(e.getKey()).append(" = :").append(e.getKey()).append(" AND ");
         }
         query.replace(query.lastIndexOf("AND"), query.length(), "");
 
-        String resultQuery = query.toString();
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            String forReplace = ":" + entry.getKey();
-            resultQuery = resultQuery.replace(forReplace, String.valueOf(entry.getValue()));
-        }
-        System.out.println(resultQuery);
+        paramsToString(params);
+        printFullQuery(params, query);
         try {
             return jdbcTemplate.query(query.toString(), params, mapper());
         } catch (EmptyResultDataAccessException e){
             return new ArrayList<>();
+        }
+    }
+
+    private void printFullQuery(Map<String, Object> params, StringBuilder query) {
+        String resultQuery = query.toString();
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            String forReplace = ":" + entry.getKey();
+            resultQuery = resultQuery.replace(forReplace, entry.getValue().toString());
+        }
+        System.out.println(resultQuery);
+    }
+
+    private void paramsToString(Map<String, Object> params) {
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            entry.setValue(entry.getValue().toString());
         }
     }
 
@@ -91,7 +102,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
         for(Field field : entity.getClass().getDeclaredFields()){
             field.setAccessible(true);
             if(field.get(entity) == null) continue;
-            params.put(field.getAnnotation(Column.class).name(), field.get(entity).toString());
+            params.put(field.getAnnotation(Column.class).name(), field.get(entity));
         }
         return params;
     }
