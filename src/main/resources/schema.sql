@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS tester (
 id int  NOT NULL   AUTO_INCREMENT,
-dwadwa VARCHAR(50),
-dawwda VARCHAR(20),
+naminum VARCHAR(50),
+categorikida VARCHAR(20),
 lala VARCHAR(20),
 PRIMARY KEY (id)
 );

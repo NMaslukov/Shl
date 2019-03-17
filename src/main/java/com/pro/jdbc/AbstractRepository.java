@@ -3,36 +3,40 @@ package com.pro.jdbc;
 import com.pro.resource.annotations.Column;
 import com.pro.resource.annotations.Table;
 import lombok.SneakyThrows;
-import org.apache.commons.lang.enums.EnumUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class AbstractRepository<T> {
+public abstract class AbstractRepository<T> implements Repository<T> {
 
     private static final String INSERT_INTO = "INSERT INTO ";
     private static final String VALUES = " VALUES";
-    protected final NamedParameterJdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private final String tableName;
     private final Class entityClass;
 
-    public AbstractRepository(DataSource dataSource, Class entityClass){
+    @SneakyThrows
+    public AbstractRepository(DataSource dataSource){
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+
+        ParameterizedTypeImpl superClass = (ParameterizedTypeImpl) this.getClass().getGenericSuperclass();
+        this.entityClass = Class.forName(superClass.getActualTypeArguments()[0].getTypeName());
+        
         tableName = ((Table)(entityClass.getAnnotation(Table.class))).name();
-        this.entityClass = entityClass;
     }
 
+    @Override
     public void save(T entity) {
 
-        Map<String, Object> entityParamMap = null;
+        Map<String, Object> entityParamMap;
         try {
             entityParamMap = getEntityParamMap(entity);
         } catch (IllegalAccessException e) {
@@ -58,34 +62,28 @@ public abstract class AbstractRepository<T> {
     /*
     ** This method will properly works only for entities without super class and primary types!
      */
+    @Override
     @SneakyThrows
-    public Optional<T> findByParameters(T entity) {
+    public List<T> findByParameters(T entity) {
         Map<String, Object> params = getEntityParamMap(entity);
-
+        if(params.size() == 0) throw new RuntimeException("Params size 0");
         StringBuilder query = new StringBuilder("SELECT * FROM " + tableName + " WHERE ");
         for (Map.Entry<String, Object> e: params.entrySet()) {
-            query.append(e.getKey()).append("=?").append(" AND ");
+            query.append(e.getKey()).append(" = :").append(e.getKey()).append(" AND ");
         }
         query.replace(query.lastIndexOf("AND"), query.length(), "");
 
+        String resultQuery = query.toString();
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            String forReplace = ":" + entry.getKey();
+            resultQuery = resultQuery.replace(forReplace, String.valueOf(entry.getValue()));
+        }
+        System.out.println(resultQuery);
         try {
-            return (Optional<T>) Optional.ofNullable(jdbcTemplate.queryForObject(query.toString(), params, new BeanPropertyRowMapper(entity.getClass())));
+            return jdbcTemplate.query(query.toString(), params, mapper());
         } catch (EmptyResultDataAccessException e){
-            return Optional.empty();
+            return new ArrayList<>();
         }
-    }
-
-    @SneakyThrows
-    public int updateByParameters(T entity){
-        Map<String, Object> params = getEntityParamMap(entity);
-        StringBuilder query = new StringBuilder("UPDATE " + entity.getClass().getAnnotation(Table.class).name() + " SET ");
-
-        for (Map.Entry<String, Object> paramsEntry : params.entrySet()) {
-            query.append(paramsEntry.getKey() + " = :" + paramsEntry + ", ");
-        }
-        query.replace(query.lastIndexOf(","), query.length(), "");
-
-        return jdbcTemplate.update(query.toString(), params);
     }
 
     private Map<String, Object> getEntityParamMap(T entity) throws IllegalAccessException {
@@ -93,7 +91,7 @@ public abstract class AbstractRepository<T> {
         for(Field field : entity.getClass().getDeclaredFields()){
             field.setAccessible(true);
             if(field.get(entity) == null) continue;
-            params.put(field.getAnnotation(Column.class).name(), field.get(entity));
+            params.put(field.getAnnotation(Column.class).name(), field.get(entity).toString());
         }
         return params;
     }

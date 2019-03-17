@@ -5,8 +5,9 @@ import com.pro.resource.annotations.Table;
 import com.pro.utils.generator.DDLgenerator;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -14,11 +15,11 @@ import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.util.*;
 
+@Log4j2
 public class SchemaValidator {
 
     private static final String QUERY_FOR_COLUMNS = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = :table_name AND TABLE_SCHEMA = :table_schema" ;
     private final String table_schema;
-    private Log log = LogFactory.getLog("crutchnate.log");
     private NamedParameterJdbcTemplate template;
 
     public SchemaValidator(DataSource dataSource, String table_schema) {
