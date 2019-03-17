@@ -158,7 +158,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
     private void setBooleanValue(T newInstance, Field declaredField, Object value) throws IllegalAccessException {
         Boolean var = null;
         if(String.valueOf(value).equals("1")) var = true;
-        if(String.valueOf(value).equals("0")) value = false;
+        if(String.valueOf(value).equals("0")) var = false;
         declaredField.set(newInstance, var);
     }
 
