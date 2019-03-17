@@ -22,14 +22,14 @@ public abstract class AbstractRepository<T> implements Repository<T> {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private final String tableName;
-    private final Class entityClass;
+    private final Class<T> entityClass;
 
     @SneakyThrows
     public AbstractRepository(DataSource dataSource){
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
 
         ParameterizedTypeImpl superClass = (ParameterizedTypeImpl) this.getClass().getGenericSuperclass();
-        this.entityClass = Class.forName(superClass.getActualTypeArguments()[0].getTypeName());
+        this.entityClass = (Class<T>) Class.forName(superClass.getActualTypeArguments()[0].getTypeName());
         
         tableName = ((Table)(entityClass.getAnnotation(Table.class))).name();
     }
@@ -118,7 +118,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
     public RowMapper<T> mapper() {
         return (resultSet, i) -> {
             try {
-                T newInstance = (T) entityClass.newInstance();
+                T newInstance = entityClass.newInstance();
                 for (Field declaredField : newInstance.getClass().getDeclaredFields()) {
                     Object value = getColumnName(resultSet, declaredField);
                     declaredField.setAccessible(true);
