@@ -10,6 +10,8 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,8 +95,14 @@ public abstract class AbstractRepository<T> implements Repository<T> {
 
     private void paramsToString(Map<String, Object> params) {
         for (Map.Entry<String, Object> entry : params.entrySet()) {
-            entry.setValue(entry.getValue().toString());
+            if (isNeedConvertation(entry)) {
+                entry.setValue(entry.getValue().toString());
+            }
         }
+    }
+
+    private boolean isNeedConvertation(Map.Entry<String, Object> entry) {
+        return entry.getValue().getClass() != Boolean.class;
     }
 
     private Map<String, Object> getEntityParamMap(T entity) throws IllegalAccessException {
@@ -112,9 +120,15 @@ public abstract class AbstractRepository<T> implements Repository<T> {
             try {
                 T newInstance = (T) entityClass.newInstance();
                 for (Field declaredField : newInstance.getClass().getDeclaredFields()) {
-                    Object value = resultSet.getObject(declaredField.getAnnotation(Column.class).name());
+                    Object value = getColumnName(resultSet, declaredField);
                     declaredField.setAccessible(true);
-                    if(((Class)declaredField.getGenericType()).isEnum()){
+
+                    if(isBoolean(declaredField)){
+                        setBooleanValue(newInstance, declaredField, value);
+                        continue;
+                    }
+
+                    if(isEnum(declaredField)){
                         setEnumValue(newInstance, declaredField, value);
                         continue;
                     }
@@ -127,6 +141,25 @@ public abstract class AbstractRepository<T> implements Repository<T> {
                 return null;
             }
         };
+    }
+
+    private Object getColumnName(ResultSet resultSet, Field declaredField) throws SQLException {
+        return resultSet.getObject(declaredField.getAnnotation(Column.class).name());
+    }
+
+    private boolean isEnum(Field declaredField) {
+        return ((Class)declaredField.getGenericType()).isEnum();
+    }
+
+    private boolean isBoolean(Field declaredField) throws ClassNotFoundException {
+        return Class.forName(declaredField.getGenericType().getTypeName()) == Boolean.class;
+    }
+
+    private void setBooleanValue(T newInstance, Field declaredField, Object value) throws IllegalAccessException {
+        Boolean var = null;
+        if(String.valueOf(value).equals("1")) var = true;
+        if(String.valueOf(value).equals("0")) value = false;
+        declaredField.set(newInstance, var);
     }
 
     private void setEnumValue(T newInstance, Field declaredField, Object value) throws ClassNotFoundException, IllegalAccessException {
