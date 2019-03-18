@@ -132,7 +132,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
                         setEnumValue(newInstance, declaredField, value);
                         continue;
                     }
-                    ;
+
                     declaredField.set(newInstance, value);
                 }
                 return newInstance;

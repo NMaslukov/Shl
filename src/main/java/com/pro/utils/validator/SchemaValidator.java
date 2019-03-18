@@ -6,8 +6,6 @@ import com.pro.utils.generator.DDLgenerator;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -35,19 +33,23 @@ public class SchemaValidator {
             for (Class<?> entity : entities) {
                 Table tableAnnotation = entity.getAnnotation(Table.class);
                 List<ColumnsDTO> columnsFromDb = entitiesFromDB.get(tableAnnotation.name());
-                for (Field field : entity.getDeclaredFields()) {
-                    Column columnDef = field.getAnnotation(Column.class);
-                    Optional<ColumnsDTO> dbColumnDef = columnsFromDb.stream().filter(e -> e.getCOLUMN_NAME().equals(columnDef.name())).findFirst();
-                    if(!dbColumnDef.isPresent()){
-                        putMissingColumn(missingDbTableColumnsMap, tableAnnotation, columnDef);
-                    }
-                }
+                exemineForMissingColumn(missingDbTableColumnsMap, entity, tableAnnotation, columnsFromDb);
             }
             addMissingColumns(missingDbTableColumnsMap);
             deleteColumns(entities, entitiesFromDB);
 
         } catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    private void exemineForMissingColumn(Map<String, List<Column>> missingDbTableColumnsMap, Class<?> entity, Table tableAnnotation, List<ColumnsDTO> columnsFromDb) {
+        for (Field field : entity.getDeclaredFields()) {
+            Column columnDef = field.getAnnotation(Column.class);
+            Optional<ColumnsDTO> dbColumnDef = columnsFromDb.stream().filter(e -> e.getCOLUMN_NAME().equals(columnDef.name())).findFirst();
+            if(!dbColumnDef.isPresent()){
+                putMissingColumn(missingDbTableColumnsMap, tableAnnotation, columnDef);
+            }
         }
     }
 

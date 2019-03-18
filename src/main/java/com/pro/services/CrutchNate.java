@@ -23,28 +23,30 @@ import java.util.Set;
 @Log4j2
 public class CrutchNate {
 
-    public static final String SCHEMA_SQL = "schema.sql";
-
     @SneakyThrows
     public static void run(String entityPackage, DataSource dataSource) {
         try {
             Set<Class<?>> entities = scanEntities(entityPackage);
+
             String resultDDl = DDLgenerator.process(entities);
-            String[] split = resultDDl.split(";");
-            split[split.length - 1] = null;
-            new JdbcTemplate(dataSource).batchUpdate(split);
-            String jdbcUrl = ((HikariDataSource) dataSource).getJdbcUrl();
-            String schemaName = jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1);
-            SchemaValidator validator = new SchemaValidator(dataSource,  schemaName);
+            executeDDL(dataSource, resultDDl);
+
+            SchemaValidator validator = new SchemaValidator(dataSource,  getSchemaName((HikariDataSource) dataSource));
             validator.validate(entities);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    private static void executeScript(DataSource dataSource) throws IOException, SQLException {
-        ClassPathResource resource = new ClassPathResource(SCHEMA_SQL);
-        ScriptUtils.executeSqlScript(dataSource.getConnection(), resource);
+    private static void executeDDL(DataSource dataSource, String resultDDl) {
+        String[] split = resultDDl.split(";");
+        split[split.length - 1] = null;
+        new JdbcTemplate(dataSource).batchUpdate(split);
+    }
+
+    private static String getSchemaName(HikariDataSource dataSource) {
+        String jdbcUrl = dataSource.getJdbcUrl();
+        return jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1);
     }
 
     private static Set<Class<?>> scanEntities(String entityPackage) {
