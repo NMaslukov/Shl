@@ -31,7 +31,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
         ParameterizedTypeImpl superClass = (ParameterizedTypeImpl) this.getClass().getGenericSuperclass();
         this.entityClass = (Class<T>) Class.forName(superClass.getActualTypeArguments()[0].getTypeName());
         
-        tableName = ((Table)(entityClass.getAnnotation(Table.class))).name();
+        tableName = ((entityClass.getAnnotation(Table.class))).name();
     }
 
     @Override
